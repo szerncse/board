@@ -1,10 +1,17 @@
 const express = require('express');
 const app = express();
 const port = 5000
-const dotenv = require("dotenv")
-dotenv.config();
+const dotenv = require("dotenv");
 
-app.set('view engine', 'ejs');
+dotenv.config();
+app.use(express.json());
+app.use(express.urlencoded({extended:true}))
+
+const methodOverride = require('method-override');
+app.use(methodOverride('_method'))
+
+
+app.set('view engine','ejs');
 
 
 
@@ -27,6 +34,7 @@ app.listen(process.env.SERVER_PORT, ()=>{
     
 
 
+
 }).catch((error)=>{
     console.log()
 })
@@ -40,7 +48,7 @@ res.sendFile(__dirname + '/page/index.html')
 
 
 app.get('/about', (req,res)=>{
-    // res.send("어바웃 페이지");
+    res.send("어바웃 페이지");
     // db.collection("notice").insertOne({
     //     title: "첫번째 글",
     //     content: "두번쨰 글"
@@ -57,6 +65,11 @@ app.get('/list', async (req,res)=>{
         });
     })
 
+    app.get('/write',(req,res)=>{
+        res.render('write.ejs')
+    })
+
+
 app.get('/view/:id', async (req,res)=>{
     const result = await db.collection("notice").findOne({
         _id : new ObjectId(req.params.id)
@@ -71,6 +84,57 @@ app.get('/view/:id', async (req,res)=>{
 app.get('/portfolio', (req,res)=>{
     res.send("포폴 페이지2");
     })
+
+
+
+
+app.post('/add',async (req,res)=>{
+        console.log(req.body)
+        try{
+            await db.collection("notice").insertOne({
+                title: req.body.title,
+                content: req.body.content
+            })
+        }catch(error){
+            console.log(error)
+                }
+    // res.send("성공!")
+    res.redirect('/list')
+} )
+
+app.put('/edit', async (req,res)=>{
+// updateOne({문서},{
+// $set : {원하는키: 변경값}
+// })
+
+await db.collection("notice").updateOne({
+    _id : new ObjectId("65274fb5be10430213561455")
+},{
+  $set :{
+      title: req.body.title,
+      content: req.body.content
+    }
+ })
+    const result = "";
+    // res.send(result)
+    res.redirect('/list')
+})
+
+
+app.get('/edit/:id', async(req,res)=>{
+    const result = await db.collection("notice").findOne({
+        _id : new ObjectId(req.params.id)
+    })
+    res.render("edit.ejs", {
+        data : result
+        });
+    })
+
+
+
+
+
+
 
     // 1. uniform Interface
     // 여러 URL 과 METHOD 는 일관성이 있어야 하며, 하나의 URL 에서는 하나의 데이터만 가져오게 디자인 하며, 간결하고 예측 가능한 URL 과 METHOD 를 만들어야 한다.
