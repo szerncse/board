@@ -1,9 +1,11 @@
 const express = require('express');
 const app = express();
 const port = 5000
+const dotenv = require("dotenv")
+dotenv.config();
 
 app.set('view engine', 'ejs');
-// mongodb+srv://admin:<qwe1234>@cluster0.pcchu3g.mongodb.net/
+
 
 
 const {MongoClient, ObjectId} = require('mongodb');
@@ -11,16 +13,19 @@ app.use(express.static(__dirname + '/public'))
 
 let db;
 let sample;
-const url = 'mongodb+srv://admin:qwe1234@cluster0.pcchu3g.mongodb.net/'
+const url = `mongodb+srv://${process.env.MONGODB_ID}:${process.env.MONGODB_PW}@cluster0.pcchu3g.mongodb.net/`
 
 new MongoClient(url).connect().then((client)=>{
     db = client.db("board");
     sample = client.db("sample_training")
     console.log("db 연결 완료!!")
+    
 
-    app.listen(5000, ()=>{
-        console.log(`${port}번호에서 서버 실행중`)
-        })
+app.listen(process.env.SERVER_PORT, ()=>{
+    console.log(`${process.env.SERVER_PORT}번호에서 서버 실행중`)
+})
+    
+
 
 }).catch((error)=>{
     console.log()
