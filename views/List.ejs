@@ -13,13 +13,28 @@
         <ul class="flex justify-between items-center border bg-slate-50">
       
             <li class="basis-2/4"><a href="/view/<%= data[i]._id %>"><%= data[i].title %></a></li>
-            <li class="basis-2/4"><%= data[i].content %> <a href="/edit/<%=data[i]._id %>">✏</a> </li>
+            <li class="basis-2/4"><%= data[i].content %> <a href="/edit/<%=data[i]._id %>">✏</a>  <a href="javascript:deleteFun('<%=data[i]._id %>')">삭제</a></li>
+ 
+            <!-- /delete/<%=data[i]._id %> -->
         </ul>
         
    <% } %>
    <a href="/write">글쓰기</a>
     
-    
+
+    <script>
+function deleteFun(data){
+    let confirmChk = confirm("정말 삭제 하시겠습니까?");
+    console.log(data)
+
+    if(confirmChk){
+    console.log("확인 누름")
+        window.location.href = '/delete/'+data
+    }
+}
+
+
+    </script>
 
 </body>
 </html>

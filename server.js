@@ -57,17 +57,32 @@ app.get('/about', (req,res)=>{
 
 app.get('/list', async (req,res)=>{
 
-    const result = await db.collection("notice").find().toArray()
-    console.log(result[0])
+    const result = await db.collection("notice").find().limit(5).toArray()
 
     res.render("list.ejs", {
         data : result
-        });
-    })
+    });
+})
 
-    app.get('/write',(req,res)=>{
+app.get('/list/:id', async (req,res)=>{
+
+    const result = await db.collection("notice").find().skip((req.params.id - 1)* 5).limit(5).toArray()
+
+    res.render("list.ejs", {
+        data : result
+    });
+})
+
+app.get('/notice',(req,res)=>{
+    res.send('notice페이지')
+})
+
+
+app.get('/write',(req,res)=>{
         res.render('write.ejs')
-    })
+})
+
+
 
 
 app.get('/view/:id', async (req,res)=>{
@@ -89,7 +104,6 @@ app.get('/portfolio', (req,res)=>{
 
 
 app.post('/add',async (req,res)=>{
-        console.log(req.body)
         try{
             await db.collection("notice").insertOne({
                 title: req.body.title,
@@ -108,14 +122,14 @@ app.put('/edit', async (req,res)=>{
 // })
 
 await db.collection("notice").updateOne({
-    _id : new ObjectId("65274fb5be10430213561455")
+    _id : new ObjectId(req.body._id)
 },{
   $set :{
       title: req.body.title,
       content: req.body.content
     }
  })
-    const result = "";
+    
     // res.send(result)
     res.redirect('/list')
 })
@@ -131,7 +145,13 @@ app.get('/edit/:id', async(req,res)=>{
     })
 
 
+app.get('/delete/:id', async(req,res)=>{
 
+    await db.collection("notice").deleteOne({
+            _id : new ObjectId(req.params.id)
+        })
+        res.redirect('/list')
+})
 
 
 
