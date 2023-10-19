@@ -2,6 +2,23 @@ const express = require('express');
 const app = express();
 const port = 5000
 const dotenv = require("dotenv");
+const bcrypt = require("bcrypt");
+
+const session = require('express-session');
+const passport = require('passport');
+const Localstrategy = require('passport-local');
+
+app.use(passport.initialize());
+app.use(session({
+    secret: '암호화에쓸 비번', //세션 문서의 암호화
+    resave: false, //유저가 서버로 요청할 떄마다 갱신할건지
+    saveUninitialized: false // 로그인 안해도 세션 만들건지
+}))
+app.use(passport.session());
+
+
+
+
 
 dotenv.config();
 app.use(express.json());
@@ -33,6 +50,10 @@ app.listen(process.env.SERVER_PORT, ()=>{
 })
     
 
+
+app.get('/bananalist',(req,res)=>{
+    res.send('바나나페이지')
+})
 
 
 }).catch((error)=>{
@@ -153,6 +174,65 @@ app.get('/delete/:id', async(req,res)=>{
         res.redirect('/list')
 })
 
+
+passport.use(new Localstrategy({
+    usernameField : 'userid',
+    passwordField : 'password'
+},async (userid,password,cb)=>{
+    let result = await db.collection("users").findOne({
+        userid : userid
+    })
+
+    if(!result){
+        return cb(null, false, {message: '아이디나 비밀번호가 일치 하지 않음'})
+    }
+    if(result.password === password){
+        return cb(null, result);
+    }else{
+        return cb(null, false, {message: '아이디나 비밀번호가 일치 하지 않음'})
+    }
+}))
+
+app.get('/login', (req,res)=>{
+    res.render('login.ejs')
+})
+app.post('/login', async(req,res, next)=>{
+//   console.log(req.body);
+    passport.authenticate('local',(error, user, info)=>{
+        console.log(error, user, info)
+        if(error) return res.status(500).json(error);
+        if(!user) return res.status(401).json(info.message)
+        req.logIn(user, (error)=>{
+         if(error) return next(error);
+          res.redirect('/')
+        })
+    })(req,res,next)
+})
+
+
+
+
+
+
+
+app.get('/register',(req,res)=>{
+    res.render("register.ejs")
+})
+app.post('/register', async(req,res)=>{
+
+    let hashpass = await bcrypt.hash(req.body.password, 10);
+
+    // console.log(hashpass)
+    try{
+        await db.collection("users").insertOne({
+            userid: req.body.userid,
+            password: hashpass
+        })
+    }catch(error){
+        // console.log(error)
+            }
+res.redirect('/list')
+})
 
 
 
