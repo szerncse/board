@@ -7,22 +7,49 @@ const bcrypt = require("bcrypt");
 const session = require('express-session');
 const passport = require('passport');
 const Localstrategy = require('passport-local');
+const MongoStore = require('connect-mongo');
+
+dotenv.config();
+app.use(express.json());
+app.use(express.urlencoded({extended:true}))
+
+const url = `mongodb+srv://${process.env.MONGODB_ID}:${process.env.MONGODB_PW}@cluster0.pcchu3g.mongodb.net/`
+
 
 app.use(passport.initialize());
 app.use(session({
     secret: '암호화에쓸 비번', //세션 문서의 암호화
     resave: false, //유저가 서버로 요청할 떄마다 갱신할건지
-    saveUninitialized: false // 로그인 안해도 세션 만들건지
+    saveUninitialized: false, // 로그인 안해도 세션 만들건지
+    cookie: {maxAge: 60* 60* 1000},
+    store : MongoStore.create({
+       mongoUrl: url,
+       dbName: "board"
+    })
 }))
+
 app.use(passport.session());
+passport.serializeUser((user,done)=>{
+ process.nextTick(()=>{
+    // done(null, 세션에 기록할 내용)
+    done(null, {id: user._id, userid: user.userid})
+ })
+})
+
+passport.deserializeUser(async (user,done)=>{
+    let result = await db.collection("users").findOne({
+        _id: new ObjectId(user.id)
+    })
+    delete result.password
+    // console.log(result)
+    process.nextTick(()=>{
+        done(null, result);
+    })
+})
 
 
 
 
-
-dotenv.config();
-app.use(express.json());
-app.use(express.urlencoded({extended:true}))
 
 const methodOverride = require('method-override');
 app.use(methodOverride('_method'))
@@ -37,7 +64,7 @@ app.use(express.static(__dirname + '/public'))
 
 let db;
 let sample;
-const url = `mongodb+srv://${process.env.MONGODB_ID}:${process.env.MONGODB_PW}@cluster0.pcchu3g.mongodb.net/`
+
 
 new MongoClient(url).connect().then((client)=>{
     db = client.db("board");
@@ -57,7 +84,7 @@ app.get('/bananalist',(req,res)=>{
 
 
 }).catch((error)=>{
-    console.log()
+    // console.log()
 })
 
 
@@ -186,7 +213,9 @@ passport.use(new Localstrategy({
     if(!result){
         return cb(null, false, {message: '아이디나 비밀번호가 일치 하지 않음'})
     }
-    if(result.password === password){
+    const passChk = await bcrypt.compare(password, result.password);
+    // console.log(passChk)
+    if(passChk){
         return cb(null, result);
     }else{
         return cb(null, false, {message: '아이디나 비밀번호가 일치 하지 않음'})
@@ -199,7 +228,7 @@ app.get('/login', (req,res)=>{
 app.post('/login', async(req,res, next)=>{
 //   console.log(req.body);
     passport.authenticate('local',(error, user, info)=>{
-        console.log(error, user, info)
+        // console.log(error, user, info)
         if(error) return res.status(500).json(error);
         if(!user) return res.status(401).json(info.message)
         req.logIn(user, (error)=>{
